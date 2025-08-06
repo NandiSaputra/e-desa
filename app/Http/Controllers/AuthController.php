@@ -19,29 +19,44 @@ class AuthController extends Controller
     }
 
     // PROSES LOGIN ADMIN & PERANGKAT
-    public function loginAdmin(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
+public function loginAdmin(Request $request)
+{
+    $credentials = $request->validate([
+    'email' => 'required|email',
+    'password' => 'required|min:6'
+]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
+    $role = strtolower($request->input('role')); // pastikan lowercase
 
-            // Cek role dan arahkan ke dashboard sesuai role
-            if (Auth::user()->role === 'admin') {
-                return redirect()->route('dashboard.admin')->with('success', "Selamat datang di Dashboard". Auth::user()->role. "!");
-            } elseif (Auth::user()->role === 'perangkat') {
-                return redirect()->route('dashboard.perangkat')->with('success', "Selamat datang di Dashboard". Auth::user()->role."!");
+    // Coba login hanya pakai email + password
+    if (Auth::attempt([
+        'email' => $credentials['email'],
+        'password' => $credentials['password']
+    ])) {
+        $request->session()->regenerate();
+
+        // Cek apakah role user sama dengan role yang dipilih
+        if (Auth::user()->role === $role) {
+            // Arahkan ke dashboard sesuai role
+            if ($role === 'admin') {
+                return redirect('/dashboard/admin')
+                    ->with('success', 'Selamat datang di dashboard admin! ' . Auth::user()->name);
+            } elseif ($role === 'perangkat') {
+                return redirect('/dashboard/perangkat')
+                    ->with('success', 'Selamat datang di dashboard perangkat! ' . Auth::user()->name);
             }
-
-            Auth::logout();
-            return back()->with('error', 'Email ditolak karena bukan admin atau perangkat.');
         }
 
-        return back()->with('error', 'Email atau password salah.')->onlyInput('email');
+        // Kalau role salah
+        Auth::logout();
+        return back()->with('error', 'Akses ditolak untuk role ' . ucfirst($role) . '.')->onlyInput('email');
     }
+
+    // Kalau email/password salah
+    return back()->with('error', 'Email atau password salah.')->onlyInput('email');
+}
+
+
 
     // PROSES LOGIN WARGA
     public function loginWarga(Request $request)

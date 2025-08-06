@@ -98,23 +98,37 @@
                             </button>
                         </div>
                     </div>
+                    <!-- Hidden Role Input -->
+                    <input type="hidden" id="role" name="role" value="admin">
 
                     <!-- Email/Username Input -->
-                    <div class="space-y-2">
-                        <label for="email" class="block text-sm font-medium text-text-primary">
-                            Email atau Username
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <i class="fas fa-envelope text-text-secondary"></i>
-                            </div>
-                            <input type="text" id="email" name="email" required class="input-field pl-12 pr-4 py-3 w-full" placeholder="Masukkan email atau username" />
-                        </div>
-                        <div id="emailError" class="text-error text-sm hidden">
-                            <i class="fas fa-exclamation-circle mr-1"></i>
-                            Email atau username tidak valid
-                        </div>
-                    </div>
+               <div class="space-y-2">
+    <label for="email" class="block text-sm font-medium text-text-primary">
+        Email atau Username
+    </label>
+
+    <div class="relative">
+        <!-- Ikon Email -->
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <i class="fas fa-envelope text-text-secondary"></i>
+        </div>
+
+        <!-- Input -->
+        <input type="text" id="email" name="email"
+            value="{{ old('email') }}"
+            required
+            class="input-field pl-12 pr-4 py-3 w-full"
+            placeholder="Masukkan email atau username" />
+    </div>
+
+    <!-- Error di sini, di luar .relative -->
+    @error('email')
+        <p id="error-email" class="text-red-500 text-sm flex items-center mt-1">
+            <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
+        </p>
+    @enderror
+</div>
+
 
                     <!-- Password Input -->
                     <div class="space-y-2">
@@ -130,10 +144,12 @@
                                 <i class="fas fa-eye text-text-secondary hover:text-text-primary transition-colors duration-200"></i>
                             </button>
                         </div>
-                        <div id="passwordError" class="text-error text-sm hidden">
-                            <i class="fas fa-exclamation-circle mr-1"></i>
-                            Kata sandi harus minimal 6 karakter
-                        </div>
+                        <div>            @error('password')
+        <p id="passwordError" class="text-red-500 text-sm flex items-center mt-1">
+            <i class="fas fa-exclamation-circle mr-1"></i> {{ $message }}
+        </p>
+    @enderror</div>
+               
                     </div>
 
                     <!-- Remember Me & Forgot Password -->
@@ -207,6 +223,105 @@
             </div>
         </div>
     </div>
+<script>
 
+    //toggle password visibility
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const passwordInput = document.getElementById('password');
+        const icon = this.querySelector('i');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        const adminRoleButton = document.getElementById('adminRole');
+        const perangkatRoleButton = document.getElementById('perangkatRole');
+        const roleInput = document.getElementById('role');
+
+        adminRoleButton.addEventListener('click', function() {
+            roleInput.value = 'admin';
+            adminRoleButton.classList.add('bg-primary', 'text-white', 'shadow-subtle');
+            perangkatRoleButton.classList.remove('bg-primary', 'text-white', 'shadow-subtle');
+        });
+
+        perangkatRoleButton.addEventListener('click', function() {
+            roleInput.value = 'perangkat';
+            perangkatRoleButton.classList.add('bg-primary', 'text-white', 'shadow-subtle');
+            adminRoleButton.classList.remove('bg-primary', 'text-white', 'shadow-subtle');
+        });
+    });
+    //hapus error email tidak valid 
+   
+document.addEventListener("DOMContentLoaded", function () {
+    // Cari semua input
+    document.querySelectorAll("input").forEach(function (input) {
+        input.addEventListener("input", function () {
+            let errorEl = document.querySelector(`#error-${input.name}`);
+            if (errorEl) {
+                errorEl.remove(); // hapus elemen error
+            }
+        });
+    });
+});
+    //hapus error pasword tidak valid
+document.addEventListener("DOMContentLoaded", function () {
+    // Cari semua input
+    document.querySelectorAll("input").forEach(function (input) {
+        input.addEventListener("input", function () {
+            let errorEl = document.querySelector(`#${input.name}Error`);
+            if (errorEl) {
+                errorEl.remove(); // hapus elemen error
+            }
+        });
+    });
+});
+
+//alert jika email bukan email dan password kurang dari 6 karakter
+document.addEventListener("DOMContentLoaded", function () {
+    const loginForm = document.getElementById("loginForm");
+    loginForm.addEventListener("submit", function (event) {
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+        let hasError = false;
+
+    // Untuk Email
+if (!emailInput.value.includes("@")) {
+    hasError = true;
+    if (!document.getElementById("error-email")) {
+        const errorEl = document.createElement("p");
+        errorEl.id = "error-email";
+        errorEl.className = "text-red-500 text-sm flex items-center mt-1";
+        errorEl.innerHTML = '<i class="fas fa-exclamation-circle mr-1"></i> Email tidak valid';
+        // Masukkan setelah div.relative
+        emailInput.closest(".relative").insertAdjacentElement("afterend", errorEl);
+    }
+}
+
+// Untuk Password
+if (passwordInput.value.length < 6) {
+    hasError = true;
+    if (!document.getElementById("passwordError")) {
+        const errorEl = document.createElement("p");
+        errorEl.id = "passwordError";
+        errorEl.className = "text-red-500 text-sm flex items-center mt-1";
+        errorEl.innerHTML = '<i class="fas fa-exclamation-circle mr-1"></i> Kata sandi harus minimal 6 karakter';
+        passwordInput.closest(".relative").insertAdjacentElement("afterend", errorEl);
+    }
+}
+
+
+        if (hasError) {
+            event.preventDefault(); // Batalkan submit jika ada error
+        }
+    });
+});
+
+</script>
 </body>
 </html>
