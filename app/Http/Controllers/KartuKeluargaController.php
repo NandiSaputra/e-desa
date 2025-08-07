@@ -38,4 +38,56 @@ class KartuKeluargaController extends Controller
             ->route('dashboard.admin.kartu_keluarga')
             ->with('success', 'Kartu Keluarga berhasil disimpan.');
     }
+
+  public function update(Request $request, $id)
+{
+    $validated = $request->validate([
+        'no_kk' => 'required|string|min:16|max:16|unique:kartu_keluargas,no_kk,' . $id,
+        'kepala_keluarga' => 'required|string|max:100',
+        'alamat' => 'required|string|max:255',
+        'rt' => 'required|string|max:5',
+        'rw' => 'required|string|max:5',
+        'desa' => 'required|string|max:100',
+        'kecamatan' => 'required|string|max:100',
+        'kabupaten' => 'required|string|max:100',
+        'provinsi' => 'required|string|max:100',
+    ]);
+
+    $validated = array_map('strtoupper', $validated);
+
+    $kartuKeluarga = KartuKeluarga::findOrFail($id);
+    $kartuKeluarga->update($validated);
+
+    $kartuKeluarga->save();
+
+    return redirect()
+        ->route('dashboard.admin.kartu_keluarga')
+        ->with('success', 'Kartu Keluarga berhasil diperbarui.');
+}
+public function detail($id)
+{
+    $kartuKeluarga = KartuKeluarga::with('anggotaKeluarga')->find($id);
+
+    if (!$kartuKeluarga) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Data tidak ditemukan'
+        ], 404);
+    }
+
+    return response()->json([
+        'success' => true,
+        'data' => $kartuKeluarga
+    ]);
+}
+
+    public function destroy($id)
+    {
+        $kartuKeluarga = KartuKeluarga::findOrFail($id);
+        $kartuKeluarga->delete();
+
+        return redirect()
+            ->route('dashboard.admin.kartu_keluarga')
+            ->with('success', 'Kartu Keluarga berhasil dihapus.');
+    }
 }
