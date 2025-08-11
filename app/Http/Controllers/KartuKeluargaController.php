@@ -2,15 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\KartuKeluargaWargaImport;
 use App\Models\KartuKeluarga;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use Spatie\LaravelPdf\Facades\Pdf;
 
 class KartuKeluargaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $kartuKeluargas = KartuKeluarga::orderBy('created_at', 'desc')->paginate(5);
-        return view('dashboard.admin.kartu_keluarga.index', compact('kartuKeluargas'));
+        $query = KartuKeluarga::query();
+
+    if ($search = $request->get('search')) {
+        $query->where('no_kk', 'like', "%{$search}%")
+              ->orWhere('kepala_keluarga', 'like', "%{$search}%")
+              ->orWhere('alamat', 'like', "%{$search}%");
+    }
+
+    $kartuKeluargas = $query->paginate(10)->appends(['search' => $search]);
+
+    return view('dashboard.admin.kartu_keluarga.index', compact('kartuKeluargas', 'search'));
     }
 
     public function store(Request $request)
@@ -66,7 +78,9 @@ class KartuKeluargaController extends Controller
 }
 public function detail($id)
 {
-    $kartuKeluarga = KartuKeluarga::with('anggotaKeluarga')->find($id);
+    $kartuKeluarga = KartuKeluarga::with(['anggotaKeluarga' => function($q) {
+        $q->select('id','kartu_keluarga_id','nik','nama_lengkap','status_dalam_keluarga', 'tanggal_lahir');
+    }])->find($id);
 
     if (!$kartuKeluarga) {
         return response()->json([
@@ -75,10 +89,42 @@ public function detail($id)
         ], 404);
     }
 
+    // Ubah key supaya jadi `warga`
+    $data = $kartuKeluarga->toArray();
+    $data['warga'] = $data['anggota_keluarga'];
+    unset($data['anggota_keluarga']);
+
     return response()->json([
         'success' => true,
-        'data' => $kartuKeluarga
+        'data' => $data
     ]);
+}
+
+
+public function cetak($id)
+{
+    $kk = KartuKeluarga::with('anggotaKeluarga')->findOrFail($id);
+    return Pdf::view('dashboard.admin.kartu_keluarga.cetak', compact('kk'))
+        ->landscape()
+        ->format('A4')
+        ->name("KK_{$kk->no_kk}.pdf");
+}
+ public function form()
+    {
+        return view('import.kk');
+    }
+
+ public function import(Request $request)
+{
+    $request->validate([
+        'file' => 'required|mimes:csv,xlsx,xls'
+    ]);
+
+    Excel::import(new KartuKeluargaWargaImport, $request->file('file'));
+
+    return redirect()
+        ->route('dashboard.admin.kartu_keluarga')
+        ->with('success', 'Data KK & Warga berhasil diimport!');
 }
 
     public function destroy($id)

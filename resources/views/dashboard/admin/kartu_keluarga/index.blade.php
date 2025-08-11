@@ -11,11 +11,30 @@
                 </div>
                 <div  x-data="familyManager()" x-init="init()"class="flex items-center space-x-3">
                  <!-- Tombol Import -->
-    <button onclick="openImportModal()" 
-        class="flex items-center space-x-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-500 transition-colors">
+    <!-- Tombol Import CSV -->
+<form action="{{ route('kartu_keluarga.import') }}" method="POST" enctype="multipart/form-data" class="flex items-center space-x-2">
+    @csrf
+    
+    <!-- Input File Tersembunyi -->
+    <input 
+        type="file" 
+        name="file" 
+        id="importFile" 
+        accept=".csv" 
+        class="hidden" 
+        required 
+        onchange="this.form.submit()" 
+    >
+
+    <!-- Label Sebagai Tombol -->
+    <label 
+        for="importFile" 
+        class="flex items-center space-x-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-500 transition-colors cursor-pointer"
+    >
         <i class="fas fa-upload text-sm"></i>
         <span>Import CSV</span>
-    </button>
+    </label>
+</form>
 
     <!-- Tombol Tambah Keluarga -->
     <button @click="openCreateModal()" 
@@ -28,65 +47,48 @@
             </div>
 
             <!-- Split Panel Layout -->
-            <div  x-data="familyManager()" x-init="init()" class="grid grid-cols-1 lg:grid-cols-10 gap-6">
+            <div x-data="familyManager()" x-init="init()" class="grid grid-cols-1 lg:grid-cols-10 gap-6">
                 <!-- Left Panel - Data Table (70%) -->
                 <div class="lg:col-span-7">
                     <!-- Filter Toolbar -->
                     <div class="card mb-6">
                         <div class="flex flex-wrap items-center gap-4 mb-4">
+                            
                             <!-- Search Input -->
-                            <div class="flex-1 min-w-64">
-                                <div class="relative">
-                                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-text-secondary"></i>
-                                    <input type="text" id="searchInput" placeholder="Cari berdasarkan No. KK, Nama KK, atau Alamat..." class="form-input pl-10" onkeyup="filterTable()" />
-                                </div>
-                            </div>
+                           <div class="flex-1 min-w-64">
+   <div class="flex-1 min-w-64">
+    <form method="GET" action="{{ route('dashboard.admin.kartu_keluarga') }}" class="flex items-center space-x-2">
+        
+        <!-- Input + Icon -->
+        <div class="relative w-full">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+            </span>
+            <input 
+                type="text" 
+                id="searchInput" 
+                name="search" 
+                value="{{ request('search') }}" 
+                placeholder="Cari berdasarkan No. KK, Nama KK, atau Alamat..." 
+                class="form-input pl-10 w-full"
+                oninput="if(this.value.trim() === '') window.location='{{ route('dashboard.admin.kartu_keluarga') }}';" 
+            />
+        </div>
 
-                            <!-- Address Filter -->
-                            <select id="addressFilter" class="form-input w-48" onchange="filterTable()">
-                                <option value>Semua Alamat</option>
-                                <option value="RT 01">RT 01</option>
-                                <option value="RT 02">RT 02</option>
-                                <option value="RT 03">RT 03</option>
-                                <option value="RT 04">RT 04</option>
-                                <option value="RT 05">RT 05</option>
-                            </select>
-
-                            <!-- Status Filter -->
-                            <select id="statusFilter" class="form-input w-40" onchange="filterTable()">
-                                <option value>Semua Status</option>
-                                <option value="Aktif">Aktif</option>
-                                <option value="Tidak Aktif">Tidak Aktif</option>
-                                <option value="Pindah">Pindah</option>
-                            </select>
-
-                            <!-- Filter Reset -->
-                            <button onclick="resetFilters()" class="px-4 py-2 text-text-secondary hover:text-primary border border-border rounded-lg transition-colors">
-                                <i class="fas fa-undo text-sm mr-2"></i>
-                                Reset
-                            </button>
+        <!-- Tombol -->
+        <button 
+            type="submit" 
+            class="px-4 py-2 bg-blue-600 text-black rounded hover:bg-blue-700 flex items-center space-x-1"
+        >
+            <i class="fas fa-search"></i>
+            <span>Cari</span>
+        </button>
+    </form>
+</div>
+</div>
                         </div>
 
-                        <!-- Bulk Actions -->
-                        <div id="bulkActions" class="flex items-center justify-between p-3 bg-primary-50 rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <span class="text-sm font-medium text-primary">
-                                    <span id="selectedCount">0</span> keluarga dipilih
-                                </span>
-                                <button onclick="bulkStatusUpdate()" class="px-3 py-1 bg-primary text-white text-sm rounded hover:bg-primary-600 transition-colors">
-                                    Update Status
-                                </button>
-                                <button onclick="bulkExport()" class="px-3 py-1 bg-secondary text-white text-sm rounded hover:bg-secondary-500 transition-colors">
-                                    Export
-                                </button>
-                                <button onclick="bulkDelete()" class="px-3 py-1 bg-error text-white text-sm rounded hover:bg-error-600 transition-colors">
-                                    Hapus
-                                </button>
-                            </div>
-                            <button onclick="clearSelection()" class="text-text-secondary hover:text-primary">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
+                      
                     </div>
 
                     <!-- Data Table -->
@@ -161,9 +163,9 @@
                                              <i class="fas fa-edit text-sm"></i>
                                             </button>
                                             @include('dashboard.admin.kartu_keluarga.edit_kk')
-                                                <button onclick="printFamily('3201234567890001')" class="p-1 text-accent hover:bg-accent-50 rounded transition-colors" title="Cetak">
+                                                <a href="{{route('dashboard.admin.kartu_keluarga.cetak', $kartu_keluarga->id)}}"   target="_blank" class="p-1 text-accent hover:bg-accent-50 rounded transition-colors" title="Cetak">
                                                     <i class="fas fa-print text-sm"></i>
-                                                </button>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
@@ -200,8 +202,9 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </di>
        
+
 
 {{-- script ambil api data wilayah --}}
 <script>
@@ -268,6 +271,9 @@ function familyManager(){
         },
 
          openEditModal(data) {
+            if (typeof data === "string") {
+        data = JSON.parse(decodeURIComponent(data));
+    }
             this.showEditModal = true;
             this.form = {
                 id: data.id,
@@ -360,100 +366,6 @@ function familyManager(){
         },
     }
 }
-
-
-
-// // ambil detail keluarga
-// const families = @json($kartuKeluargas->items());
-
-// window.viewFamily = function(familyNoKK) {
-//     const family = families.find(f => f.no_kk === familyNoKK);
-//     if (!family) {
-//         console.error("Data keluarga tidak ditemukan");
-//         return;
-//     }
-
-//     const detailsPanel = document.getElementById('familyDetailsPanel');
-//     detailsPanel.innerHTML = `
-//         <!-- Header -->
-//         <div class="border-b border-border-light pb-4 mb-4">
-//             <div class="flex items-center justify-between">
-//                 <h3 class="text-lg font-heading font-semibold text-text-primary">Detail Keluarga</h3>
-//                 <button onclick="editFamily('${family.no_kk}')" class="text-primary hover:text-primary-600">
-//                     <i class="fas fa-edit"></i>
-//                 </button>
-//             </div>
-//         </div>
-
-//         <!-- Info Utama (2 Kolom) -->
-//         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-//             <!-- Kolom Kiri -->
-//             <div class="space-y-4">
-//                 <div>
-//                     <label class="text-sm font-medium text-text-secondary">No. Kartu Keluarga</label>
-//                     <p class="font-data text-text-primary">${family.no_kk}</p>
-//                 </div>
-//                 <div>
-//                     <label class="text-sm font-medium text-text-secondary">Kepala Keluarga</label>
-//                     <p class="text-text-primary font-medium">${family.kepala_keluarga}</p>
-//                 </div>
-//                 <div>
-//                     <label class="text-sm font-medium text-text-secondary">Status</label>
-//                     <span class="badge-success">${family.status}</span>
-//                 </div>
-//                 <div>
-//                     <label class="text-sm font-medium text-text-secondary">Tanggal Daftar</label>
-//                     <p class="text-text-primary">${new Date(family.created_at).toLocaleDateString('id-ID')}</p>
-//                 </div>
-//             </div>
-
-//             <!-- Kolom Kanan -->
-//             <div class="space-y-3">
-//                 <div>
-//                     <label class="text-sm font-medium text-text-secondary">Provinsi</label>
-//                     <p class="text-text-primary">${family.provinsi ?? '-'}</p>
-//                 </div>
-//                 <div>
-//                     <label class="text-sm font-medium text-text-secondary">Kabupaten/Kota</label>
-//                     <p class="text-text-primary">${family.kabupaten ?? '-'}</p>
-//                 </div>
-//                 <div>
-//                     <label class="text-sm font-medium text-text-secondary">Kecamatan</label>
-//                     <p class="text-text-primary">${family.kecamatan ?? '-'}</p>
-//                 </div>
-//                 <div>
-//                     <label class="text-sm font-medium text-text-secondary">Desa/Kelurahan</label>
-//                     <p class="text-text-primary">${family.desa ?? '-'}</p>
-//                 </div>
-//                 <div>
-//                     <label class="text-sm font-medium text-text-secondary">Alamat Lengkap</label>
-//                     <p class="text-text-primary">${family.alamat}</p>
-//                 </div>
-//             </div>
-//         </div>
-
-//         <!-- Anggota Keluarga -->
-//         <div class="border-t border-border-light pt-4 mt-6">
-//             <h4 class="font-medium text-text-primary mb-3">Anggota Keluarga</h4>
-//             <p class="text-sm text-text-secondary">Data anggota belum tersedia</p>
-//         </div>
-
-//         <!-- Tombol Aksi -->
-//         <div class="border-t border-border-light pt-4 mt-6">
-//             <div class="flex space-x-2">
-//                 <button onclick="printFamily('${family.no_kk}')" class="flex-1 btn-primary">
-//                     <i class="fas fa-print mr-2"></i>
-//                     Cetak KK
-//                 </button>
-//                 <button onclick="editFamily('${family.no_kk}')" class="flex-1 btn-secondary">
-//                     <i class="fas fa-edit mr-2"></i>
-//                     Edit
-//                 </button>
-//             </div>
-//         </div>
-//     `;
-// };
-
 async function viewFamily(id) {
     const panel = document.getElementById('familyDetailsPanel');
     panel.innerHTML = `<div class="py-12 text-center text-sm text-text-secondary">Memuat data keluarga...</div>`;
@@ -464,7 +376,7 @@ async function viewFamily(id) {
 
         const result = await res.json();
 
-        if (!result.success) throw new Error(result.message || 'Gagal memuat data');
+        if (!result.success) throw new Error(result.message);
 
         const data = result.data;
 
@@ -509,27 +421,45 @@ async function viewFamily(id) {
                 </div>
             </div>
 
-            <!-- Anggota Keluarga -->
-            <div class="border-t border-border-light pt-4 mt-6">
-                <h4 class="font-medium text-text-primary mb-3">Anggota Keluarga</h4>
-                ${data.warga && data.warga.length > 0 ? `
-                    <ul class="list-disc pl-5 text-sm text-text-primary space-y-1">
-                        ${data.warga.map(w => `<li>${w.nama} (${w.nik})</li>`).join('')}
-                    </ul>
-                ` : `<p class="text-sm text-text-secondary">Data anggota belum tersedia</p>`}
-            </div>
-
-            <!-- Tombol Aksi -->
-            <div class="border-t border-border-light pt-4 mt-6">
-                <div class="flex space-x-2">
-                    <button onclick="printFamily('${data.no_kk}')" class="flex-1 btn-primary">
-                        <i class="fas fa-print mr-2"></i> Cetak KK
-                    </button>
-                    <button onclick="editFamily('${data.no_kk}')" class="flex-1 btn-secondary">
-                        <i class="fas fa-edit mr-2"></i> Edit
+         <!-- Anggota Keluarga -->
+<div class="border-t border-border-light pt-4 mt-6">
+    <h4 class="font-medium text-text-primary mb-3">
+        Anggota Keluarga (${data.warga ? data.warga.length : 0})
+    </h4>
+    <div class="space-y-3">
+        ${
+            data.warga && data.warga.length > 0
+            ? urutkanWarga(data.warga).map(w => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <p class="font-medium text-text-primary">${w.nama_lengkap}</p>
+                        <p class="text-sm text-text-secondary">
+                            ${w.status_dalam_keluarga} • ${hitungUmur(w.tanggal_lahir)} tahun
+                        </p>
+                        <p class="text-sm text-text-secondary">${w.nik}</p>
+                    </div>
+                    <button class="text-primary hover:text-primary-600">
+                        <i class="fas fa-eye text-sm"></i>
                     </button>
                 </div>
-            </div>
+            `).join('')
+            : `<p class="text-sm text-text-secondary">Data anggota belum tersedia</p>`
+        }
+    </div>
+</div>
+
+<!-- Tombol Aksi -->
+<div class="border-t border-border-light pt-4 mt-6">
+    <div class="flex space-x-2">
+        <button onclick="printFamily('${data.no_kk}')" class="flex-1 btn-primary">
+            <i class="fas fa-print mr-2"></i> Cetak KK
+        </button>
+        <button onclick="editFamily('${data.no_kk}')" class="flex-1 btn-secondary">
+            <i class="fas fa-edit mr-2"></i> Edit
+        </button>
+    </div>
+</div>
+
         `;
     } catch (error) {
         console.error(error);
@@ -537,8 +467,39 @@ async function viewFamily(id) {
     }
 }
 
+function urutkanWarga(warga) {
+    const urutanStatus = [
+        'KEPALA KELUARGA', 'SUAMI', 'ISTRI',
+        'ANAK', 'MENANTU', 'CUCU',
+        'ORANG_TUA', 'MERTUA', 'FAMILI_LAIN',
+        'PEMBANTU', 'LAINNYA'
+    ];
 
+    return warga.sort((a, b) => {
+        const indexA = urutanStatus.indexOf(a.status_dalam_keluarga.toUpperCase());
+        const indexB = urutanStatus.indexOf(b.status_dalam_keluarga.toUpperCase());
+        
+        // Jika status sama, urutkan berdasarkan tanggal lahir (yang tua dulu)
+        if (indexA === indexB) {
+            return new Date(a.tanggal_lahir) - new Date(b.tanggal_lahir);
+        }
 
+        return indexA - indexB;
+    });
+}
+function hitungUmur(tanggalLahir) {
+    const tgl = new Date(tanggalLahir);
+    const today = new Date();
+
+    let umur = today.getFullYear() - tgl.getFullYear();
+    const m = today.getMonth() - tgl.getMonth();
+
+    if (m < 0 || (m === 0 && today.getDate() < tgl.getDate())) {
+        umur--;
+    }
+
+    return umur;
+}
 document.addEventListener("DOMContentLoaded", () => {
     const noKkInput = document.querySelector('input[name="no_kk"]');
     const families = @json($kartuKeluargas->pluck('no_kk')); // ambil semua no_kk dari Laravel
@@ -585,7 +546,20 @@ document.addEventListener("DOMContentLoaded", () => {
         if (existingError) existingError.remove();
     }
 });
-
-
+//FUNCTION SEARCH
+function kkSearch() {
+    return {
+        searchQuery: '',
+        searchFamilies() {
+            fetch(`{{ route('dashboard.admin.kartu_keluarga') }}?search=${encodeURIComponent(this.searchQuery)}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.text())
+            .then(html => {
+                document.querySelector('#familyTable').innerHTML = html;
+            });
+        }
+    }
+}
 </script>
 @endsection

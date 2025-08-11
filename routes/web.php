@@ -19,7 +19,13 @@ Route::middleware('auth')->group(function () {
 Route::put('/kartu-keluarga/{id}', [KartuKeluargaController::class, 'update'])
     ->name('kartu_keluarga.update');
 Route::get('/kartu-keluarga/{id}/detail', [KartuKeluargaController::class, 'detail']);
-    
+Route::get('/kartu-keluarga/search', [KartuKeluargaController::class, 'search']);
+Route::get('/kartu-keluarga/{id}/cetak', [KartuKeluargaController::class, 'cetak'])
+     ->name('dashboard.admin.kartu_keluarga.cetak');
+         Route::get('/kartu-keluarga/import',[KartuKeluargaController::class, 'form'])->name('kartu_keluarga.import.form');
+     Route::post('/kartu-keluarga/import',[KartuKeluargaController::class, 'import'])->name('kartu_keluarga.import');
+ 
+
     // Dashboard Perangkat
     Route::get('/dashboard/perangkat', function () {
         return view('dashboard.perangkat.index');
